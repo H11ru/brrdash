@@ -9,6 +9,7 @@
             font-family: Arial, sans-serif;
             background-color: #f0f0f0;
             overflow: hidden;
+            user-select: none; /* Prevent text selection */
         }
         .blob {
             padding: 16px;
@@ -20,6 +21,7 @@
             border-radius: 8px;
             position: absolute;
             transition: transform 0.2s;
+            z-index: 1; /* Default z-index */
         }
         .selected {
             background-color: #3b82f6; /* Tailwind's bg-blue-300 */
@@ -86,6 +88,9 @@
                 const offsetX = event.clientX - blob.getBoundingClientRect().left;
                 const offsetY = event.clientY - blob.getBoundingClientRect().top;
 
+                // Bring the dragged blob to the top
+                blob.style.zIndex = 10;
+
                 const moveBlob = (moveEvent) => {
                     blob.style.left = (moveEvent.clientX - offsetX) + 'px';
                     blob.style.top = (moveEvent.clientY - offsetY) + 'px';
@@ -96,6 +101,7 @@
                     // Check if dropped back on the original position
                     if (blob.style.left === originalPosition.left && blob.style.top === originalPosition.top) {
                         blob.style.transform = 'scale(1)';
+                        blob.style.zIndex = 1; // Reset z-index
                         document.removeEventListener('mousemove', moveBlob);
                         document.removeEventListener('mouseup', dropBlob);
                         return; // Do nothing if dropped back on the original position
@@ -112,8 +118,8 @@
                                 const newBlob = document.createElement('div');
                                 newBlob.className = 'blob';
                                 newBlob.textContent = combinedType;
-                                newBlob.style.left = (Math.random() * window.innerWidth / 2) + 'px'; // Random position for new blob
-                                newBlob.style.top = (Math.random() * window.innerHeight / 2) + 'px';
+                                newBlob.style.left = (window.innerWidth / 2 - 50) + 'px'; // Spawn near the GUI
+                                newBlob.style.top = (50 + Math.random() * 50) + 'px'; // Spawn near the GUI
                                 document.body.appendChild(newBlob);
                                 combined = true;
                             } else {
@@ -135,6 +141,7 @@
                     }
 
                     blob.style.transform = 'scale(1)';
+                    blob.style.zIndex = 1; // Reset z-index
                     document.removeEventListener('mousemove', moveBlob);
                     document.removeEventListener('mouseup', dropBlob);
                 };
