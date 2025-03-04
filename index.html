@@ -36,6 +36,7 @@
     </style>
 </head>
 <body>
+    <h1>Element Thing</h1>
     <div class="gui">
         <button onclick="spawnBlob('Air')">Air</button>
         <button onclick="spawnBlob('Water')">Water</button>
@@ -49,52 +50,71 @@
             "Fire + Earth": "Lava",
             "Air + Fire": "Energy",
             "Air + Water": "Cloud",
+            "Water + Water": "Lake", // New combination
         };
 
         function spawnBlob(type) {
             const blob = document.createElement('div');
             blob.className = 'blob';
             blob.textContent = type;
-            blob.draggable = true;
             blob.style.left = Math.random() * window.innerWidth + 'px';
             blob.style.top = Math.random() * window.innerHeight + 'px';
 
-            blob.ondragstart = (event) => {
-                event.dataTransfer.setData('text/plain', type);
-                event.dataTransfer.setData('text/html', blob.outerHTML);
-            };
+            // Store the original position
+            const originalPosition = { left: blob.style.left, top: blob.style.top };
 
-            blob.ondragend = () => {
-                blob.style.transform = 'scale(1)';
+            // Custom dragging logic
+            blob.onmousedown = (event) => {
+                const offsetX = event.clientX - blob.getBoundingClientRect().left;
+                const offsetY = event.clientY - blob.getBoundingClientRect().top;
+
+                const moveBlob = (moveEvent) => {
+                    blob.style.left = (moveEvent.clientX - offsetX) + 'px';
+                    blob.style.top = (moveEvent.clientY - offsetY) + 'px';
+                    blob.style.transform = 'scale(1.1)';
+                };
+
+                const dropBlob = (dropEvent) => {
+
+                    // Check for combination with other blobs
+                    const blobs = document.querySelectorAll('.blob');
+                    blobs.forEach(otherBlob => {
+                        if (otherBlob !== blob && isOverlapping(blob, otherBlob)) {
+                            const combinedType = combineBlobs(blob.textContent, otherBlob.textContent);
+                            if (combinedType) {
+                                otherBlob.textContent = combinedType;
+                                otherBlob.style.left = Math.random() * window.innerWidth + 'px'; // Move the combined blob
+                                otherBlob.style.top = Math.random() * window.innerHeight + 'px';
+                            }
+                        }
+                    });
+
+                    blob.style.transform = 'scale(1)';
+                    document.removeEventListener('mousemove', moveBlob);
+                    document.removeEventListener('mouseup', dropBlob);
+                };
+
+                document.addEventListener('mousemove', moveBlob);
+                document.addEventListener('mouseup', dropBlob);
             };
 
             document.body.appendChild(blob);
-
-            blob.ondragover = (event) => {
-                event.preventDefault();
-                blob.style.transform = 'scale(1.1)';
-            };
-
-            blob.ondragleave = () => {
-                blob.style.transform = 'scale(1)';
-            };
-
-            blob.ondrop = (event) => {
-                event.preventDefault();
-                const droppedType = event.dataTransfer.getData('text/plain');
-                const combinedType = combineBlobs(droppedType, type);
-                if (combinedType) {
-                    blob.textContent = combinedType;
-                } else {
-                    alert("Combination failed!");
-                }
-                blob.style.transform = 'scale(1)';
-            };
         }
 
         function combineBlobs(type1, type2) {
             const key = [type1, type2].sort().join(" + ");
             return combinations[key] || null;
+        }
+
+        function isOverlapping(blob1, blob2) {
+            const rect1 = blob1.getBoundingClientRect();
+            const rect2 = blob2.getBoundingClientRect();
+            return !(
+                rect1.right < rect2.left || 
+                rect1.left > rect2.right || 
+                rect1.bottom < rect2.top || 
+                rect1.top > rect2.bottom
+            );
         }
     </script>
 </body>
