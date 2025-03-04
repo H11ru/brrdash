@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kururin Element Game</title>
+    <style>
+        .card {
+            padding: 16px;
+            cursor: pointer;
+            background-color: white;
+            border: 1px solid #ccc;
+            margin: 4px;
+            display: inline-block;
+        }
+        .selected {
+            background-color: #3b82f6; /* Tailwind's bg-blue-300 */
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="p-4 max-w-xl mx-auto text-center">
+        <h1 class="text-2xl font-bold">Kururin Element Game</h1>
+        <p class="mb-4">Discovered: <span id="discoveredCount">0</span> / 5</p>
+        <div id="elements" class="grid grid-cols-2 gap-2"></div>
+        <button id="combineButton" class="mt-4" disabled>Combine</button>
+    </div>
+
+    <script>
+        const initialElements = ["Air", "Soil", "Water", "Fire", "Steam", "Mud", "Lava", "Energy", "Cloud", "Ash"];
+        const combinations = {
+            "Fire + Water": "Steam",
+            "Soil + Water": "Mud",
+            "Fire + Soil": "Lava",
+            "Air + Fire": "Energy",
+            "Air + Water": "Cloud",
+            "Soil + Fire": "Ash",
+        };
+
+        let discovered = new Set(initialElements);
+        let selected = [];
+
+        const elementsContainer = document.getElementById('elements');
+        const discoveredCount = document.getElementById('discoveredCount');
+        const combineButton = document.getElementById('combineButton');
+
+        function renderElements() {
+            elementsContainer.innerHTML = '';
+            [...discovered].forEach(element => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.textContent = element;
+                card.onclick = () => handleSelect(element);
+                elementsContainer.appendChild(card);
+            });
+        }
+
+        function handleSelect(element) {
+            if (selected.includes(element)) {
+                selected = selected.filter(e => e !== element);
+            } else if (selected.length < 2) {
+                selected.push(element);
+            }
+            updateSelectedStyles();
+            combineButton.disabled = selected.length !== 2;
+        }
+
+        function updateSelectedStyles() {
+            const cards = elementsContainer.children;
+            for (let card of cards) {
+                if (selected.includes(card.textContent)) {
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                }
+            }
+        }
+
+        function handleCombine() {
+            if (selected.length === 2) {
+                let key = selected.sort().join(" + ");
+                if (combinations[key] && !discovered.has(combinations[key])) {
+                    discovered.add(combinations[key]);
+                    discoveredCount.textContent = discovered.size;
+                }
+                selected = [];
+                updateSelectedStyles();
+                combineButton.disabled = true;
+            }
+        }
+
+        combineButton.onclick = handleCombine;
+
+        // Initial render
+        renderElements();
+        discoveredCount.textContent = discovered.size;
+    </script>
+</body>
+</html>
