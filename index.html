@@ -33,6 +33,24 @@
             display: flex;
             gap: 10px;
         }
+        .flash {
+            animation: flash 0.5s;
+        }
+        @keyframes flash {
+            0% { background-color: red; }
+            50% { background-color: white; }
+            100% { background-color: red; }
+        }
+        .shake {
+            animation: shake 0.5s;
+        }
+        @keyframes shake {
+            0% { transform: translate(0); }
+            25% { transform: translate(-5px); }
+            50% { transform: translate(5px); }
+            75% { transform: translate(-5px); }
+            100% { transform: translate(0); }
+        }
     </style>
 </head>
 <body>
@@ -57,8 +75,8 @@
             const blob = document.createElement('div');
             blob.className = 'blob';
             blob.textContent = type;
-            blob.style.left = Math.random() * window.innerWidth + 'px';
-            blob.style.top = Math.random() * window.innerHeight + 'px';
+            blob.style.left = (window.innerWidth / 2 - 50) + 'px'; // Spawn near the GUI
+            blob.style.top = (50 + Math.random() * 50) + 'px'; // Spawn near the GUI
 
             // Store the original position
             const originalPosition = { left: blob.style.left, top: blob.style.top };
@@ -75,19 +93,46 @@
                 };
 
                 const dropBlob = (dropEvent) => {
+                    // Check if dropped back on the original position
+                    if (blob.style.left === originalPosition.left && blob.style.top === originalPosition.top) {
+                        blob.style.transform = 'scale(1)';
+                        document.removeEventListener('mousemove', moveBlob);
+                        document.removeEventListener('mouseup', dropBlob);
+                        return; // Do nothing if dropped back on the original position
+                    }
 
                     // Check for combination with other blobs
                     const blobs = document.querySelectorAll('.blob');
+                    let combined = false;
                     blobs.forEach(otherBlob => {
                         if (otherBlob !== blob && isOverlapping(blob, otherBlob)) {
                             const combinedType = combineBlobs(blob.textContent, otherBlob.textContent);
                             if (combinedType) {
-                                otherBlob.textContent = combinedType;
-                                otherBlob.style.left = Math.random() * window.innerWidth + 'px'; // Move the combined blob
-                                otherBlob.style.top = Math.random() * window.innerHeight + 'px';
+                                // Create new blob for the combined type
+                                const newBlob = document.createElement('div');
+                                newBlob.className = 'blob';
+                                newBlob.textContent = combinedType;
+                                newBlob.style.left = (Math.random() * window.innerWidth / 2) + 'px'; // Random position for new blob
+                                newBlob.style.top = (Math.random() * window.innerHeight / 2) + 'px';
+                                document.body.appendChild(newBlob);
+                                combined = true;
+                            } else {
+                                // Flash and shake both blobs if combination fails
+                                blob.classList.add('flash', 'shake');
+                                otherBlob.classList.add('flash', 'shake');
+                                setTimeout(() => {
+                                    blob.classList.remove('flash', 'shake');
+                                    otherBlob.classList.remove('flash', 'shake');
+                                }, 500);
                             }
                         }
                     });
+
+                    if (combined) {
+                        // Remove the original blobs
+                        blob.remove();
+                        otherBlob.remove();
+                    }
 
                     blob.style.transform = 'scale(1)';
                     document.removeEventListener('mousemove', moveBlob);
