@@ -3,98 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kururin Element Game</title>
+    <title>Element Game</title>
     <style>
-        .card {
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            overflow: hidden;
+        }
+        .blob {
             padding: 16px;
             cursor: pointer;
             background-color: white;
             border: 1px solid #ccc;
             margin: 4px;
             display: inline-block;
+            border-radius: 8px;
+            position: absolute;
+            transition: transform 0.2s;
         }
         .selected {
             background-color: #3b82f6; /* Tailwind's bg-blue-300 */
             color: white;
         }
+        .gui {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
     </style>
 </head>
 <body>
-    <div class="p-4 max-w-xl mx-auto text-center">
-        <h1 class="text-2xl font-bold">Kururin Element Game</h1>
-        <p class="mb-4">Discovered: <span id="discoveredCount">0</span> / 5</p>
-        <div id="elements" class="grid grid-cols-2 gap-2"></div>
-        <button id="combineButton" class="mt-4" disabled>Combine</button>
+    <div class="gui">
+        <button onclick="spawnBlob('Air')">Air</button>
+        <button onclick="spawnBlob('Water')">Water</button>
+        <button onclick="spawnBlob('Fire')">Fire</button>
+        <button onclick="spawnBlob('Earth')">Earth</button>
     </div>
-
     <script>
-        const initialElements = ["Air", "Soil", "Water", "Fire", "Steam", "Mud", "Lava", "Energy", "Cloud", "Ash"];
         const combinations = {
             "Fire + Water": "Steam",
-            "Soil + Water": "Mud",
-            "Fire + Soil": "Lava",
+            "Water + Earth": "Mud",
+            "Fire + Earth": "Lava",
             "Air + Fire": "Energy",
             "Air + Water": "Cloud",
-            "Soil + Fire": "Ash",
         };
 
-        let discovered = new Set(initialElements);
-        let selected = [];
+        function spawnBlob(type) {
+            const blob = document.createElement('div');
+            blob.className = 'blob';
+            blob.textContent = type;
+            blob.draggable = true;
+            blob.style.left = Math.random() * window.innerWidth + 'px';
+            blob.style.top = Math.random() * window.innerHeight + 'px';
 
-        const elementsContainer = document.getElementById('elements');
-        const discoveredCount = document.getElementById('discoveredCount');
-        const combineButton = document.getElementById('combineButton');
+            blob.ondragstart = (event) => {
+                event.dataTransfer.setData('text/plain', type);
+                event.dataTransfer.setData('text/html', blob.outerHTML);
+            };
 
-        function renderElements() {
-            elementsContainer.innerHTML = '';
-            [...discovered].forEach(element => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.textContent = element;
-                card.onclick = () => handleSelect(element);
-                elementsContainer.appendChild(card);
-            });
-        }
+            blob.ondragend = () => {
+                blob.style.transform = 'scale(1)';
+            };
 
-        function handleSelect(element) {
-            if (selected.includes(element)) {
-                selected = selected.filter(e => e !== element);
-            } else if (selected.length < 2) {
-                selected.push(element);
-            }
-            updateSelectedStyles();
-            combineButton.disabled = selected.length !== 2;
-        }
+            document.body.appendChild(blob);
 
-        function updateSelectedStyles() {
-            const cards = elementsContainer.children;
-            for (let card of cards) {
-                if (selected.includes(card.textContent)) {
-                    card.classList.add('selected');
+            blob.ondragover = (event) => {
+                event.preventDefault();
+                blob.style.transform = 'scale(1.1)';
+            };
+
+            blob.ondragleave = () => {
+                blob.style.transform = 'scale(1)';
+            };
+
+            blob.ondrop = (event) => {
+                event.preventDefault();
+                const droppedType = event.dataTransfer.getData('text/plain');
+                const combinedType = combineBlobs(droppedType, type);
+                if (combinedType) {
+                    blob.textContent = combinedType;
                 } else {
-                    card.classList.remove('selected');
+                    alert("Combination failed!");
                 }
-            }
+                blob.style.transform = 'scale(1)';
+            };
         }
 
-        function handleCombine() {
-            if (selected.length === 2) {
-                let key = selected.sort().join(" + ");
-                if (combinations[key] && !discovered.has(combinations[key])) {
-                    discovered.add(combinations[key]);
-                    discoveredCount.textContent = discovered.size;
-                }
-                selected = [];
-                updateSelectedStyles();
-                combineButton.disabled = true;
-            }
+        function combineBlobs(type1, type2) {
+            const key = [type1, type2].sort().join(" + ");
+            return combinations[key] || null;
         }
-
-        combineButton.onclick = handleCombine;
-
-        // Initial render
-        renderElements();
-        discoveredCount.textContent = discovered.size;
     </script>
 </body>
 </html>
